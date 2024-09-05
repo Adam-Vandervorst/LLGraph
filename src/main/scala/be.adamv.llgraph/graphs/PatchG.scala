@@ -1,7 +1,6 @@
 package be.adamv.llgraph.graphs.PatchG
 
 import scala.collection.mutable
-
 import be.adamv.llgraph.*
 import be.adamv.llgraph.graphs.DNIELMG.DNIELMG
 
@@ -9,16 +8,16 @@ import be.adamv.llgraph.graphs.DNIELMG.DNIELMG
 class RewriteRule[EL, MGL <: DNIELMG[EL], MGR <: DNIELMG[EL]]
                  (val lhs: PatchG[EL, MGL], val rhs: PatchG[EL, MGR])
                  (val rel: Set[(lhs.PT, rhs.PT)]):
-  def plot(): Unit =
+  def plot(using output: String => Unit = println): Unit =
     val v = rel.map((l, r) => rel.getLeft(r) cart rel.getRight(l)).toList
-    println("subgraph cluster_lhs {\nlabel = \"LHS\";\ncolor = \"grey\";")
-    lhs.mg.plot()
+    output("subgraph cluster_lhs {\nlabel = \"LHS\";\ncolor = \"grey\";")
+    lhs.mg.plot(using output)
     for pt <- lhs.pts do pt.plot(v.getIndexWhere(_.exists(_._1 == pt)).fold("")(_.toString))
-    println("}\n")
-    println("subgraph cluster_rhs {\nlabel = \"RHS\";\ncolor = \"grey\";")
-    rhs.mg.plot()
+    output("}\n")
+    output("subgraph cluster_rhs {\nlabel = \"RHS\";\ncolor = \"grey\";")
+    rhs.mg.plot(using output)
     for pt <- rhs.pts do pt.plot(v.getIndexWhere(_.exists(_._2 == pt)).fold("")(_.toString))
-    println("}")
+    output("}")
 
   def apply[EL2](g: DNIELMG[EL2], matching: (lhs.mg.Node => g.Node, EL => EL2)): Option[DNIELMG[EL2]] =
     import PatchTypes.*
@@ -71,15 +70,15 @@ enum PatchTypes[N <: NodeN[Any]](val id: Int):
     case AnyNodeToContext(s, _) => s"(${s.name})-<>"
     case AnyNodeToNode(s, t, _) => s"(${s.name})-<>-(${t.name})"
 
-  def plot(label: String = ""): Unit = this match
+  def plot(label: String = "")(using output: String => Unit = println): Unit = this match
     case AnyContextToNode(t, id) =>
-      println(s"c$id${t.name} [style=invis]")
-      println(s"c$id${t.name} -> ${t.name} [label=\"$label\" style=dotted]")
+      output(s"c$id${t.name} [style=invis]")
+      output(s"c$id${t.name} -> ${t.name} [label=\"$label\" style=dotted]")
     case AnyNodeToContext(s, id) =>
-      println(s"c$id${s.name} [style=invis]")
-      println(s"${s.name} -> c$id${s.name} [label=\"$label\" style=dotted]")
+      output(s"c$id${s.name} [style=invis]")
+      output(s"${s.name} -> c$id${s.name} [label=\"$label\" style=dotted]")
     case AnyNodeToNode(s, t, _) =>
-      println(s"${s.name} -> ${t.name} [label=\"$label\" style=dotted]")
+      output(s"${s.name} -> ${t.name} [label=\"$label\" style=dotted]")
 
   def ctx[N2 <: NodeN[Any]](s: => N2, t: => N2): Option[N2] = this match
     case AnyContextToNode(_, _) => Some(s)
@@ -100,8 +99,8 @@ enum PatchTypes[N <: NodeN[Any]](val id: Int):
 class PatchG[EL, MG <: DNIELMG[EL]](val mg: MG)(val pts: List[PatchTypes[mg.Node]]):
   type PT = PatchTypes[mg.Node]
 
-  def plot(): Unit =
-    mg.plot()
+  def plot(using output: String => Unit = println): Unit =
+    mg.plot(using output)
     for (pt, i) <- pts.zipWithIndex do
       pt.plot(i.toString)
 

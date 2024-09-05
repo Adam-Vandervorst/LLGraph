@@ -45,12 +45,12 @@ class DNIELG[EL] private(graph_id: Int):
   def sinks: Iterable[Node] = outgoing.collect{ case (n, outs) if outs.isEmpty || outs.map(_._2) == Set(n) => n }.asInstanceOf
   def proper_sinks: Iterable[Node] = outgoing.collect{ case (n, outs) if outs.isEmpty => n }.asInstanceOf
 
-  def plot(): Unit =
+  def plot(using output: String => Unit = println): Unit =
     for n <- nodes do
-      println(s"${n.name} [label=\"\" shape=circle width=0.25]")
+      output(s"${n.name} [label=\"\" shape=circle width=0.25]")
     for (n, nbs) <- outgoing
         (l, b) <- nbs do
-      println(s"g${n.graphId}n${n.nodeId} -> g${b.graphId}n${b.nodeId} [label=\"$l\"];")
+      output(s"g${n.graphId}n${n.nodeId} -> g${b.graphId}n${b.nodeId} [label=\"$l\"];")
 
   override def equals(obj: Any): Boolean = obj match
     case g: DNIELG[EL] => g.outgoing == outgoing

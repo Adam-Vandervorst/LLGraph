@@ -48,12 +48,12 @@ class DNIELMG[EL] private (graphId: Int):
   def sinks: Iterable[Node] = outgoing.collect{ case (n, outs) if outs.isEmpty || outs == Set(n) => n }.asInstanceOf
   def proper_sinks: Iterable[Node] = outgoing.collect{ case (n, outs) if outs.isEmpty => n }.asInstanceOf
 
-  def plot(): Unit =
+  def plot(using output: String => Unit = println): Unit =
     for n <- nodes do
-      println(s"${n.name} [label=\"\" shape=circle width=0.25]")
+      output(s"${n.name} [label=\"\" shape=circle width=0.25]")
     for (n, nbs) <- outgoing
         b <- nbs do
-      println(s"${n.name} -> ${b.name} [label=\"${labeling(n, b).mkString(",")}\"];")
+      output(s"${n.name} -> ${b.name} [label=\"${labeling(n, b).mkString(",")}\"];")
 
   def labelMap[EL2](f: EL => EL2): DNIELMG[EL2] =
     val g = DNIELMG[EL2]()

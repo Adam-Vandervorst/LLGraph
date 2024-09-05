@@ -27,13 +27,13 @@ class DVIG[V]:
   def sinks: Iterable[V] = outgoing.collect{ case (n, outs) if outs.isEmpty || outs == Set(n) => n }.asInstanceOf
   def proper_sinks: Iterable[V] = outgoing.collect{ case (n, outs) if outs.isEmpty => n }.asInstanceOf
 
-  def plot(): Unit =
+  def plot(using output: String => Unit = println): Unit =
     for (n, i) <- nodes.zipWithIndex do
-      println(s"$i [label=\"$n\" shape=circle width=0.25]")
+      output(s"$i [label=\"$n\" shape=circle width=0.25]")
     for (a, i) <- nodes.zipWithIndex
         (b, j) <- nodes.zipWithIndex
         if connected(a, b) do
-      println(s"$i -> $j;")
+      output(s"$i -> $j;")
 
   override def equals(obj: Any): Boolean = obj match
     case g: DVIG[V] => g.outgoing == outgoing
