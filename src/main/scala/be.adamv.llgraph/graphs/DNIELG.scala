@@ -27,6 +27,9 @@ class DNIELG[EL] private(graph_id: Int):
 
   def newNodes(n: Int): List[Node] =
     List.tabulate(n)(_ => newNode())
+  
+  def newNodesFor[K](n: IterableOnce[K]): Map[K, Node] =
+    n.iterator.map[(K, Node)](_ -> newNode()).toMap
 
   def connect(src: Node, dst: Node, label: EL): Unit =
     outgoing(src) += (label, dst)

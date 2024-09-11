@@ -30,6 +30,9 @@ class DNIELMG[EL] private (graphId: Int):
   def newNodes(n: Int): List[Node] =
     List.tabulate(n)(_ => newNode())
 
+  def newNodesFor[K](n: IterableOnce[K]): Map[K, Node] =
+    n.iterator.map[(K, Node)](_ -> newNode()).toMap
+
   def connect(src: Node, dst: Node, label: EL): Unit =
     outgoing(src) += dst
     incoming(dst) += src
@@ -47,6 +50,18 @@ class DNIELMG[EL] private (graphId: Int):
   def proper_sources: Iterable[Node] = incoming.collect{ case (n, ins) if ins.isEmpty => n }.asInstanceOf
   def sinks: Iterable[Node] = outgoing.collect{ case (n, outs) if outs.isEmpty || outs == Set(n) => n }.asInstanceOf
   def proper_sinks: Iterable[Node] = outgoing.collect{ case (n, outs) if outs.isEmpty => n }.asInstanceOf
+
+  def showDSL(using output: String => Unit = println): Unit =
+    output("{")
+    val na = nodes.toArray
+    output(s"val g = DNIELMG();")
+    output(s"given g.type = g;")
+    output(s"val a = g.newNodes(${na.length});")
+    for (n, nbs) <- outgoing
+        b <- nbs do
+      output(s"a(${na.indexOf(n)}) (${labeling(n, b).mkString(",")})-> a(${na.indexOf(b)});")
+    output(s"g;")
+    output("}")
 
   def plot(using output: String => Unit = println): Unit =
     for n <- nodes do
@@ -258,11 +273,22 @@ given DNIELMGasGraph[EL, MG <: DNIELMG[EL] & Singleton](using vmg: ValueOf[MG]):
         override def Nneighbouring(m: Node): Int = vmg.value.labeling(n, m).size
 
 object DSL:
-  class PartialSpec[EL, MG <: DNIELMG[EL]](using val MG: MG)(val src: MG.Node, val els: Seq[EL])
+  class PartialSpec[EL, MG <: DNIELMG[EL] & Singleton](using val MG: MG)(val src: MG.Node, val els: Seq[EL])
 
-  extension [EL, MG <: DNIELMG[EL]](using MG: MG)(n: MG.Node)
+  extension [EL, MG <: DNIELMG[EL] & Singleton](using MG: MG)(n: MG.Node)
     def apply(els: EL*) : PartialSpec[EL, MG] = PartialSpec(using MG)(n, els)
-  extension [EL, MG <: DNIELMG[EL]](ps: PartialSpec[EL, MG])
-    def ->(dst: ps.MG.Node) : ps.MG.Node =
+  extension [EL, MG <: DNIELMG[EL] & Singleton](using MG: MG)(ps: PartialSpec[EL, MG])
+    def ->(dst: MG.Node)(using ev: MG.Node =:= ps.MG.Node) : ps.MG.Node =
       for el <- ps.els do ps.MG.connect(ps.src, dst, el)
+      dst
+
+object DSLUnsound:
+  // this is unsound, but requiring pathtypes hinders the use too much
+  class PartialSpec[EL, MG <: DNIELMG[EL] & Singleton](using val MG: MG)(val src: NodeN[MG], val els: Seq[EL])
+
+  extension [EL, MG <: DNIELMG[EL] & Singleton](using MG: MG)(n: NodeN[MG])
+    def apply(els: EL*) : PartialSpec[EL, MG] = PartialSpec(using MG)(n, els)
+  extension [EL, MG <: DNIELMG[EL] & Singleton](using MG: MG)(ps: PartialSpec[EL, MG])
+    def ->(dst: NodeN[MG]) : NodeN[MG] =
+      for el <- ps.els do MG.connect(ps.src.asInstanceOf, dst.asInstanceOf, el)
       dst

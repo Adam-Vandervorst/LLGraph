@@ -108,7 +108,7 @@ class PatchG[EL, MG <: DNIELMG[EL]](val mg: MG)(val pts: List[PatchTypes[mg.Node
 case object C
 
 object PatchG:
-  inline def apply[EL, MG <: DNIELMG[EL]](inline mg: MG)(inline ptps: List[(mg.Node | C.type, mg.Node | C.type)]): PatchG[EL, MG] =
+  def apply[EL, MG <: DNIELMG[EL]](mg: MG)(ptps: List[(mg.Node | C.type, mg.Node | C.type)]): PatchG[EL, MG] =
     new PatchG(mg)(ptps.zipWithIndex.map{
       case ((C, C), _) => throw RuntimeException("Can not have patch types not connecting the match")
       case ((C, n), i) => PatchTypes.AnyContextToNode(n.asInstanceOf, i)

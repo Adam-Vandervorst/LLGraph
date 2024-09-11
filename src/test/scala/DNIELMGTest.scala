@@ -121,7 +121,59 @@ class DNIELMGTest extends FunSuite {
     assert(g3.labeling(a, a) == Set("aa"))
     assert(g3.labeling(a, b) == Set("ab1", "ab2"))
     assert(g3.labeling(b, c) == Set("bc1"))
-    assert(g3.labeling(c, b) == Set("cb2"))  }
+    assert(g3.labeling(c, b) == Set("cb2"))
+  }
+
+  test("DSL") {
+    import be.adamv.llgraph.graphs.DNIELMG.DSL.{*, given}
+    val g1 = {
+      val g = DNIELMG[String]()
+      given g.type = g
+
+//      val List(goal, fact, green, eats_flies, croaks) = g.newNodes(5)
+      val goal: g.Node = g.newNode()
+      val fact: g.Node = g.newNode()
+      val green: g.Node = g.newNode()
+      val eats_flies: g.Node = g.newNode()
+      val croaks: g.Node = g.newNode()
+
+      goal ("goal")-> goal
+      fact ("goal")-> fact
+      green ("green")-> green
+      eats_flies ("eats flies")-> eats_flies
+      croaks ("croaks")-> croaks
+
+      goal ("is")-> green
+      fact ("holds")-> eats_flies
+      fact ("holds")-> croaks
+
+      g
+    }
+
+    val g2 = {
+      val g = DNIELMG[String]()
+      given g.type = g
+
+      val m = g.newNodesFor("goal fact green eats_flies croaks".split(" "))
+
+      m("goal") ("goal")-> m("goal")
+      m("fact") ("goal")-> m("fact")
+      m("green") ("green")-> m("green")
+      m("eats_flies") ("eats flies")-> m("eats_flies")
+      m("croaks") ("croaks")-> m("croaks")
+
+      m("goal") ("is")-> m("green")
+      m("fact") ("holds")-> m("eats_flies")
+      m("fact") ("holds")-> m("croaks")
+
+      g
+    }
+
+    val sb = StringBuilder()
+    g1.labelMap(_.mkString("\"", "", "\"")).showDSL(using sb.append)
+
+    assert(sb.mkString == raw"""{val g = DNIELMG();given g.type = g;val a = g.newNodes(5);a(0) ("eats flies")-> a(0);a(1) ("green")-> a(1);a(2) ("croaks")-> a(2);a(3) ("goal")-> a(3);a(3) ("holds")-> a(0);a(3) ("holds")-> a(2);a(4) ("goal")-> a(4);a(4) ("is")-> a(1);g;}""")
+  }
 }
 
 class DNIELMGRewritingTest extends FunSuite {
